@@ -125,17 +125,11 @@ class MainWindow(QtWidgets.QMainWindow):
     def show_warning_messagebox(self):
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Warning)
-
-        # setting message for Message Box
         msg.setText("Warning: You should select a folder first")
-
         # setting Message box window title
         msg.setWindowTitle("Warning!")
-
         # declaring buttons on Message Box
         msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
-
-        # start the app
         msg.exec_()
 
 
@@ -166,7 +160,51 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.photo_6.setPixmap(QtGui.QPixmap(self.path_6).scaled(670, 130, QtCore.Qt.KeepAspectRatio))
             self.ui.photo_7.setPixmap(QtGui.QPixmap(self.path_7).scaled(670, 130, QtCore.Qt.KeepAspectRatio))
             print(self.file_path)
-            #self.file_path = path
+
+###Rename Files
+    def rename_files(self):
+        import os
+        folder = self.file_path
+        count = 1
+        for file_name in os.listdir(folder):
+            source = folder + file_name
+            destination = folder + str(count) + ".jpg"
+            os.rename(source, destination)
+            count += 1
+
+###Classify Front And Back
+    def classify_front(self):
+        data_folder = "./data/mvtec_anomaly_detection"
+        subset_name = "datasetSardine"
+        data_folder = os.path.join(data_folder, subset_name)
+
+        batch_size = 10
+        class_weight = [1, 3] if NEG_CLASS == 1 else [3, 1]
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        heatmap_thres = 0.7
+
+        train_loader, test_loader = get_train_test_loaders(
+            root=data_folder, batch_size=batch_size, test_size=0.2, random_state=42
+        )
+        model_path = f"./weights/{subset_name}_model.h5"
+        model = torch.load(model_path, map_location=device)
+        heat = False
+        for i in range(2):
+            predictionn = predict_localize(
+                model, test_loader, device, self.path_2, thres=heatmap_thres, n_samples=1, show_heatmap=False
+            )
+            if i == 0:
+                self.ui.photo_2.setPixmap(
+                    QtGui.QPixmap("./classified/zoo0.png").scaled(700, 170, QtCore.Qt.KeepAspectRatio))
+                self.ui.class_label_2.setText(predictionn)
+                x = self.path_2
+                self.path_2 = self.path_6
+            else :
+                self.ui.photo_6.setPixmap(
+                    QtGui.QPixmap("./classified/zoo0.png").scaled(700, 170, QtCore.Qt.KeepAspectRatio))
+                self.ui.class_label_6.setText(predictionn)
+                self.path_2 = x
+
 
 
     def classify(self):
@@ -175,49 +213,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.open_folder()
             return
         else:
-            data_folder = "./data/mvtec_anomaly_detection"
-            subset_name = "datasetSardine"
-            data_folder = os.path.join(data_folder, subset_name)
-
-            batch_size = 10
-            class_weight = [1, 3] if NEG_CLASS == 1 else [3, 1]
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            heatmap_thres = 0.7
-
-            train_loader, test_loader = get_train_test_loaders(
-                root=data_folder, batch_size=batch_size, test_size=0.2, random_state=42
-            )
-            model_path = f"./weights/{subset_name}_model.h5"
-            model = torch.load(model_path, map_location=device)
-            heat=False
-            predictionn=predict_localize(
-                model, test_loader, device, self.path_2, thres=heatmap_thres, n_samples=1, show_heatmap=False
-            )
-
-            #self.ui.photo_1.setStyleSheet("background-color: transparent;")
-            self.ui.photo_1.setPixmap(QtGui.QPixmap("./classified/zoo0.png").scaled(700, 170, QtCore.Qt.KeepAspectRatio))
-            self.ui.class_label_1.setText(predictionn)
-
-            self.ui.photo_2.setPixmap(QtGui.QPixmap("./classified/zoo0.png").scaled(700, 170, QtCore.Qt.KeepAspectRatio))
-            self.ui.class_label_2.setText(predictionn)
-
-            self.ui.photo_3.setPixmap(QtGui.QPixmap("./classified/zoo0.png").scaled(700, 170, QtCore.Qt.KeepAspectRatio))
-            self.ui.class_label_3.setText(predictionn)
-
-            self.ui.photo_4.setPixmap(QtGui.QPixmap("./classified/zoo0.png").scaled(700, 170, QtCore.Qt.KeepAspectRatio))
-            self.ui.class_label_4.setText(predictionn)
-
-            self.ui.photo_5.setPixmap(QtGui.QPixmap("./classified/zoo0.png").scaled(700, 170, QtCore.Qt.KeepAspectRatio))
-            self.ui.class_label_5.setText(predictionn)
-
-            self.ui.photo_6.setPixmap(QtGui.QPixmap("./classified/zoo0.png").scaled(700, 170, QtCore.Qt.KeepAspectRatio))
-            self.ui.class_label_6.setText(predictionn)
-
-            self.ui.photo_7.setPixmap(QtGui.QPixmap("./classified/zoo0.png").scaled(700, 170, QtCore.Qt.KeepAspectRatio))
-            self.ui.class_label_7.setText(predictionn)
-
-            self.ui.photo_1.adjustSize()
-
+            self.classify_front()
 
     def restore_or_maximize_window(self):
         if self.isMaximized():
