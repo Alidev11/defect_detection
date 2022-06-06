@@ -18,7 +18,7 @@ from utils.constants import (
     IMG_FORMAT,
     NEG_CLASS,
 )
-matplotlib.use("Agg")
+#matplotlib.use("Agg")
 def train(
     dataloader, model, optimizer, criterion, epochs, device, target_accuracy=None
 ):
@@ -54,7 +54,7 @@ def train(
         print("Loss = {:.4f}, Accuracy = {:.4f}".format(epoch_loss, epoch_acc))
 
         if target_accuracy != None:
-            if epoch_acc >= target_accuracy and epoch_loss <= 0.0004 :
+            if epoch_acc >= target_accuracy and epoch_loss <= 0.0030 :
                 print("Early Stopping")
                 break
 
@@ -133,7 +133,7 @@ def get_bbox_from_heatmap(heatmap, thres=0.7):
 
 
 def predict_localize(
-    model, dataloader, device, path, thres=0.8, n_samples=9, show_heatmap=False
+    model, dataloader, device, path, bbox, thres=0.8, n_samples=9, show_heatmap=False
 ):
     """
     Runs predictions for the samples in the dataloader.
@@ -154,20 +154,23 @@ def predict_localize(
     for inputs, labels in dataloader:
         inputs = inputs.to(device)
 
-        from datetime import datetime
-        #now = datetime.now()
-        #timestamp = datetime.timestamp(now)
-        #print("timestamp =", timestamp)
+
+
         start = time.time()
-        #inputs = 0
-        ####################################################################
+
+
+
+        i = 0
+        number = 1
+        for temp in range(10 - number):
+            inputs = torch.cat([inputs[0:i], inputs[i + 1:]])
+
         imgToTensor = transforms.Compose([transforms.Resize(INPUT_IMG_SIZE), transforms.ToTensor()])
         img = Image.open(path)
         inputs[0] = imgToTensor(img)
-        #print(img)
 
         out = model(inputs)
-        #start = time.time()
+
         print("%s seconds" % (float("{0:.2f}".format(time.time() - start))))
 
         probs, class_preds = torch.max(out[0], dim=-1)
@@ -195,25 +198,26 @@ def predict_localize(
             #)
             plt.savefig(f"./classified/zoo0.png")  # save the figure to file
 
-
-            if class_pred == NEG_CLASS:
-                x_0, y_0, x_1, y_1, bnm = get_bbox_from_heatmap(heatmap, thres)
-                rectangle = Rectangle(
-                    (x_0, y_0),
-                    x_1 - x_0,
-                    y_1 - y_0,
-                    edgecolor="red",
-                    facecolor="none",
-                    lw=1,
-                )
-                plt.gca().add_patch(rectangle)
-                plt.savefig(f"./classified/zoo0.png")  # save the figure to file
-                if show_heatmap:
-                    plt.imshow(heatmap, cmap="Reds", alpha=0.3)
+            if bbox:
+                if class_pred == NEG_CLASS:
+                    x_0, y_0, x_1, y_1, bnm = get_bbox_from_heatmap(heatmap, thres)
+                    rectangle = Rectangle(
+                        (x_0, y_0),
+                        x_1 - x_0,
+                        y_1 - y_0,
+                        edgecolor="red",
+                        facecolor="none",
+                        lw=2,
+                    )
+                    plt.gca().add_patch(rectangle)
                     plt.savefig(f"./classified/zoo0.png")  # save the figure to file
+                    if show_heatmap:
+                        plt.imshow(heatmap, cmap="Reds", alpha=0.3)
+                        plt.savefig(f"./classified/zoo0.png")  # save the figure to file
 
             if counter == n_samples:
                 plt.tight_layout()
                 #plt.show()
+                print(class_names[class_pred])
                 return class_names[class_pred]
     plt.close(fig)

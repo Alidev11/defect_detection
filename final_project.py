@@ -136,7 +136,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def open_folder(self):
         foldername = QFileDialog.getExistingDirectory(
             caption="Select a folder",
-            directory="data/mvtec_anomaly_detection/datasetSardine/test/bad"
+            directory="data/mvtec_anomaly_detection/datasetSardine/test"
         )
         self.file_path = foldername
         if self.file_path == "C:/Users/Mon Ordi/Desktop/Visual-Inspection-main-last/data/mvtec_anomaly_detection/datasetSardine/test/bad" or self.file_path == None :
@@ -159,18 +159,112 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.photo_5.setPixmap(QtGui.QPixmap(self.path_5).scaled(670, 130, QtCore.Qt.KeepAspectRatio))
             self.ui.photo_6.setPixmap(QtGui.QPixmap(self.path_6).scaled(670, 130, QtCore.Qt.KeepAspectRatio))
             self.ui.photo_7.setPixmap(QtGui.QPixmap(self.path_7).scaled(670, 130, QtCore.Qt.KeepAspectRatio))
-            print(self.file_path)
+            #print(self.file_path)
 
-###Rename Files
-    def rename_files(self):
-        import os
-        folder = self.file_path
-        count = 1
-        for file_name in os.listdir(folder):
-            source = folder + file_name
-            destination = folder + str(count) + ".jpg"
-            os.rename(source, destination)
-            count += 1
+###Rename
+
+    def classify_top(self):
+        data_folder = "./data/mvtec_anomaly_detection"
+        subset_name = "corner"
+        data_folder = os.path.join(data_folder, subset_name)
+
+        batch_size = 10
+        class_weight = [1, 3] if NEG_CLASS == 1 else [3, 1]
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        heatmap_thres = 0.7
+
+        train_loader, test_loader = get_train_test_loaders(
+            root=data_folder, batch_size=batch_size, test_size=0.2, random_state=42
+        )
+        model_path = f"./weights/{subset_name}_model.h5"
+        model = torch.load(model_path, map_location=device)
+        heat = False
+        bbox = False
+        if self.ui.options_checkox_1.isChecked():
+            heat = True
+        if self.ui.options_checkox_2.isChecked():
+            bbox = True
+        predictionn = predict_localize(
+            model, test_loader, device, self.path_4, bbox, thres=heatmap_thres, n_samples=1, show_heatmap=heat
+        )
+        self.ui.photo_4.setPixmap(
+            QtGui.QPixmap("./classified/zoo0.png").scaled(700, 170, QtCore.Qt.KeepAspectRatio))
+        self.ui.photo_4.setScaledContents(True)
+        if predictionn == "Good":
+            self.ui.class_label_4.setStyleSheet("background-color: #5FD068;")
+        else:
+            self.ui.class_label_4.setStyleSheet("background-color: #F00C44;")
+        self.ui.class_label_4.setText(predictionn)
+
+
+    def classify_corner(self):
+        data_folder = "./data/mvtec_anomaly_detection"
+        subset_name = "corner"
+        data_folder = os.path.join(data_folder, subset_name)
+
+        batch_size = 10
+        class_weight = [1, 3] if NEG_CLASS == 1 else [3, 1]
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        heatmap_thres = 0.7
+
+        train_loader, test_loader = get_train_test_loaders(
+            root=data_folder, batch_size=batch_size, test_size=0.2, random_state=42
+        )
+        model_path = f"./weights/{subset_name}_model.h5"
+        model = torch.load(model_path, map_location=device)
+        heat = False
+        bbox = False
+        if self.ui.options_checkox_1.isChecked():
+            heat = True
+        if self.ui.options_checkox_2.isChecked():
+            bbox = True
+
+        for i in range(4):
+            predictionn = predict_localize(
+                model, test_loader, device, self.path_1, bbox, thres=heatmap_thres, n_samples=1, show_heatmap=heat
+            )
+            if i == 0:
+                self.ui.photo_1.setPixmap(
+                    QtGui.QPixmap("./classified/zoo0.png").scaled(700, 170, QtCore.Qt.KeepAspectRatio))
+                self.ui.photo_1.setScaledContents(True)
+                if predictionn == "Good":
+                    self.ui.class_label_1.setStyleSheet("background-color: #5FD068;")
+                else:
+                    self.ui.class_label_1.setStyleSheet("background-color: #F00C44;")
+                self.ui.class_label_1.setText(predictionn)
+                x = self.path_1
+                self.path_1 = self.path_3
+            elif i == 1:
+                self.ui.photo_3.setPixmap(
+                    QtGui.QPixmap("./classified/zoo0.png").scaled(700, 170, QtCore.Qt.KeepAspectRatio))
+                self.ui.photo_3.setScaledContents(True)
+                if predictionn == "Good":
+                    self.ui.class_label_3.setStyleSheet("background-color: #5FD068;")
+                else:
+                    self.ui.class_label_3.setStyleSheet("background-color: #F00C44;")
+                self.ui.class_label_3.setText(predictionn)
+                self.path_1 = self.path_5
+            elif i == 2:
+                self.ui.photo_5.setPixmap(
+                    QtGui.QPixmap("./classified/zoo0.png").scaled(700, 170, QtCore.Qt.KeepAspectRatio))
+                self.ui.photo_5.setScaledContents(True)
+                if predictionn == "Good":
+                    self.ui.class_label_5.setStyleSheet("background-color: #5FD068;")
+                else:
+                    self.ui.class_label_5.setStyleSheet("background-color: #F00C44;")
+                self.ui.class_label_5.setText(predictionn)
+                self.path_1 = self.path_7
+            else:
+                self.ui.photo_7.setPixmap(
+                    QtGui.QPixmap("./classified/zoo0.png").scaled(700, 170, QtCore.Qt.KeepAspectRatio))
+                self.ui.photo_7.setScaledContents(True)
+                if predictionn == "Good":
+                    self.ui.class_label_7.setStyleSheet("background-color: #5FD068;")
+                else:
+                    self.ui.class_label_7.setStyleSheet("background-color: #F00C44;")
+                self.ui.class_label_7.setText(predictionn)
+                self.path_1 = x
+
 
 ###Classify Front And Back
     def classify_front(self):
@@ -189,21 +283,38 @@ class MainWindow(QtWidgets.QMainWindow):
         model_path = f"./weights/{subset_name}_model.h5"
         model = torch.load(model_path, map_location=device)
         heat = False
+        bbox = False
+        if self.ui.options_checkox_1.isChecked():
+            heat = True
+        if self.ui.options_checkox_2.isChecked():
+            bbox = True
+
         for i in range(2):
             predictionn = predict_localize(
-                model, test_loader, device, self.path_2, thres=heatmap_thres, n_samples=1, show_heatmap=False
+                model, test_loader, device, self.path_2, bbox, thres=heatmap_thres, n_samples=1, show_heatmap=heat
             )
             if i == 0:
                 self.ui.photo_2.setPixmap(
                     QtGui.QPixmap("./classified/zoo0.png").scaled(700, 170, QtCore.Qt.KeepAspectRatio))
+                self.ui.photo_2.setScaledContents(True)
+                if predictionn == "Good":
+                    self.ui.class_label_2.setStyleSheet("background-color: #5FD068;")
+                else:
+                    self.ui.class_label_2.setStyleSheet("background-color: #F00C44;")
                 self.ui.class_label_2.setText(predictionn)
                 x = self.path_2
                 self.path_2 = self.path_6
-            else :
+            else:
                 self.ui.photo_6.setPixmap(
                     QtGui.QPixmap("./classified/zoo0.png").scaled(700, 170, QtCore.Qt.KeepAspectRatio))
+                self.ui.photo_6.setScaledContents(True)
+                if predictionn == "Good":
+                    self.ui.class_label_6.setStyleSheet("background-color: #5FD068;")
+                else:
+                    self.ui.class_label_6.setStyleSheet("background-color: #F00C44;")
                 self.ui.class_label_6.setText(predictionn)
                 self.path_2 = x
+
 
 
 
@@ -214,6 +325,8 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         else:
             self.classify_front()
+            self.classify_corner()
+            self.classify_top()
 
     def restore_or_maximize_window(self):
         if self.isMaximized():

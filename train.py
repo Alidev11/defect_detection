@@ -14,13 +14,13 @@ from datetime import datetime
 
 
 data_folder = "./data/mvtec_anomaly_detection"
-subset_name = "corner"
+subset_name = "datasetSardine_top"
 data_folder = os.path.join(data_folder, subset_name)
 
 batch_size = 10
-target_train_accuracy = 0.90
-lr = 0.0400
-epochs = 15
+target_train_accuracy = 0.9999
+lr = 0.0001
+epochs = 40
 class_weight = [1, 3] if NEG_CLASS == 1 else [3, 1]
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -30,25 +30,29 @@ train_loader, test_loader = get_train_test_loaders(
     root=data_folder, batch_size=batch_size, test_size=0.2, random_state=42
 )
 
-model = CustomVGG()
 
-class_weight = torch.tensor(class_weight).type(torch.FloatTensor).to(device)
-criterion = nn.CrossEntropyLoss(weight=class_weight)
-optimizer = optim.Adam(model.parameters(), lr=lr)
+#model_path = f"./weights/{subset_name}_model.h5"
+#model = torch.load(model_path, map_location=device)
+#model = CustomVGG()
+#class_weight = torch.tensor(class_weight).type(torch.FloatTensor).to(device)
+#criterion = nn.CrossEntropyLoss(weight=class_weight)
+#optimizer = optim.Adam(model.parameters(), lr=lr)
 
-model = train(
-    train_loader, model, optimizer, criterion, epochs, device, target_train_accuracy
-)
+
+#model = train(
+ #   train_loader, model, optimizer, criterion, epochs, device, target_train_accuracy
+#)
 
 
 model_path = f"./weights/{subset_name}_model.h5"
-torch.save(model, model_path)
+#torch.save(model, model_path)
 model = torch.load(model_path, map_location=device)
 #model = keras.models.load_model(model_path)
-path = "data/mvtec_anomaly_detection/corner/test/bad/0.jpg"
-
+#evaluate(model, test_loader, device)
+path = "data/mvtec_anomaly_detection/datasetSardine_top/test/bad/0.jpg"
+bbox = True
 predict_localize(
-    model, test_loader, device, path, thres=heatmap_thres, n_samples=1, show_heatmap=False
+    model, test_loader, device, path, bbox, thres=heatmap_thres, n_samples=1, show_heatmap=True
 )
 
 
