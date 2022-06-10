@@ -2,32 +2,105 @@
 ## IMPORTS
 ########################################################################
 import matplotlib.pyplot as plt
+import sys
+import time
+from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QProgressBar, QLabel, QFrame, QHBoxLayout, QVBoxLayout
+from PyQt5.QtCore import Qt, QTimer
 import torch
 from utils.dataloader import get_train_test_loaders, get_cv_train_test_loaders
 from utils.helper import train, evaluate, predict_localize
 from utils.constants import NEG_CLASS
-from PyQt5 import QtCore, QtGui, QtWidgets
-import sys
-import os
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PySide2.QtGui import QPainter
+from PyQt5.QtChart import QChart, QChartView, QBarSet, QPercentBarSeries, QBarCategoryAxis
+from PyQt5.QtGui import QPainter
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
-
-from PySide2 import *
-import psutil
-#from multiprocessing import cpu_count
-#import datetime
 from qt_material import *
-import shutil
-import platform
-import PySide2extn
-from time import time, sleep
-########################################################################
 
-########################################################################
+
+
 # IMPORT GUI FILE
 from lastGUIapp import *
+shadow_elements = {
+    "defected_card_frame",
+    "good_card_frame"
+}
+
+class SplashScreen(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle('SpLash Screen Example')
+        self.setFixedSize(700, 400)
+        self.setWindowFlag(QtCore.Qt.FramelessWindowHint)
+        self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
+
+        self.counter = 0
+        self.n = 300 # total instance
+
+        self.initUI()
+
+        self.timer = QTimer()
+        self.timer.timeout.connect(lambda: self.loading())
+        self.timer.start(30)
+
+    def initUI(self):
+        layout = QVBoxLayout()
+        self.setLayout(layout)
+
+        self.frame = QtWidgets.QFrame()
+        layout.addWidget(self.frame)
+
+        self.labelTitle = QtWidgets.QLabel(self.frame)
+        self.labelTitle.setObjectName('LabelTitle')
+
+        # center labels
+        self.labelTitle.resize(self.width() - 10, 150)
+        self.labelTitle.move(0, 20) # x, y
+        self.labelTitle.setText('Visual Inspection')
+        self.labelTitle.setAlignment(QtCore.Qt.AlignCenter)
+
+        self.labelDescription = QLabel(self.frame)
+        self.labelDescription.resize(self.width() - 10, 50)
+        self.labelDescription.move(0, self.labelTitle.height())
+        self.labelDescription.setObjectName('LabelDesc')
+        self.labelDescription.setText('<strong>Working on Task #1</strong>')
+        self.labelDescription.setAlignment(QtCore.Qt.AlignCenter)
+
+        self.progressBar = QProgressBar(self.frame)
+        self.progressBar.resize(self.width() - 200 - 10, 50)
+        self.progressBar.move(100, self.labelDescription.y() + 80)
+        self.progressBar.setAlignment(QtCore.Qt.AlignCenter)
+        self.progressBar.setFormat('%p%')
+        self.progressBar.setTextVisible(True)
+        self.progressBar.setRange(0, self.n)
+        self.progressBar.setValue(20)
+
+        self.labelLoading = QLabel(self.frame)
+        self.labelLoading.resize(self.width() - 10, 50)
+        self.labelLoading.move(0, self.progressBar.y() + 70)
+        self.labelLoading.setObjectName('LabelLoading')
+        self.labelLoading.setAlignment(QtCore.Qt.AlignCenter)
+        self.labelLoading.setText('loading...')
+
+    def loading(self):
+        self.progressBar.setValue(self.counter)
+
+        if self.counter == int(self.n * 0.3):
+            self.labelDescription.setText('<strong>Working on Task #2</strong>')
+        elif self.counter == int(self.n * 0.6):
+            self.labelDescription.setText('<strong>Working on Task #3</strong>')
+        elif self.counter >= self.n:
+            self.timer.stop()
+            self.close()
+
+            time.sleep(1)
+
+            self.myApp = MainWindow()
+            self.myApp.show()
+
+        self.counter += 1
+
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -119,8 +192,19 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.ui.openFile_button.clicked.connect(self.open_folder)
         self.ui.classify_button.clicked.connect(lambda: self.classify())
+        self.create_percentage_bar_chart()
         print(self.file_path)
-        self.show()
+        #self.show()
+        for x in shadow_elements:
+            #######################################################################
+            ## # Shadow effect style
+            ########################################################################
+            effect = QtWidgets.QGraphicsDropShadowEffect(self)
+            effect.setBlurRadius(35)
+            effect.setXOffset(10)
+            effect.setYOffset(10)
+            effect.setColor(QtGui.QColor(0, 0, 0, 100))
+            getattr(self.ui, x).setGraphicsEffect(effect)
 
     def show_warning_messagebox(self):
         msg = QMessageBox()
@@ -163,9 +247,59 @@ class MainWindow(QtWidgets.QMainWindow):
 
 ###Rename
 
+    def create_percentage_bar_chart(self):
+
+        set0 = QBarSet("Defected")
+        set1 = QBarSet("Good")
+
+        set0.append([1, 2, 3,  4, 5, 6, 1, 2, 3,  4, 5, 6])
+        set1.append([5, 0, 0,  4, 0, 7, 5, 0, 0,  4, 0, 7])
+
+        series = QPercentBarSeries()
+        series.append(set0)
+        series.append(set1)
+
+        chart = QChart()
+        chart.addSeries(series)
+        chart.setTitle("Defected vs Good cans in 2022")
+        chart.setAnimationOptions(QChart.SeriesAnimations)
+
+
+        categories = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "July", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        axis = QBarCategoryAxis()
+        axis.append(categories)
+        chart.createDefaultAxes()
+        chart.setAxisX(axis, series)
+
+        chart.legend().setVisible(True)
+        #chart.legend().setAlignment(Qt.AlignBottom)
+
+
+        self.ui.chart_view = QChartView(chart)
+        self.ui.chart_view.setRenderHint(QPainter.Antialiasing)
+        self.ui.chart_view.chart().setTheme(QChart.ChartThemeDark)
+        # QChart.setTheme(theme)
+
+        # print(self.ui.chart_view.chart().theme())
+        # self.ui.chart_view.chart().setBackgroundBrush(QtGui.QColor("gray"))
+
+        # self.setCentralWidget(chart_view)
+
+        # self.lineEdit = QLineEdit(self.percentage_bar_chart_cont)
+        # self.lineEdit.setObjectName(u"lineEdit")
+
+        sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.ui.chart_view.sizePolicy().hasHeightForWidth())
+        self.ui.chart_view.setSizePolicy(sizePolicy)
+        self.ui.chart_view.setMinimumSize(QSize(0, 300))
+        self.ui.percentage_bar_chart_cont.addWidget(self.ui.chart_view, 0, 0,  9, 9)
+        self.ui.chart_frame.setStyleSheet(u"background-color: transparent")
+
     def classify_top(self):
         data_folder = "./data/mvtec_anomaly_detection"
-        subset_name = "corner"
+        subset_name = "datasetSardine_top"
         data_folder = os.path.join(data_folder, subset_name)
 
         batch_size = 10
@@ -403,8 +537,49 @@ class MainWindow(QtWidgets.QMainWindow):
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
-    window = MainWindow()
-    sys.exit(app.exec_())
+    app.setStyleSheet('''
+            #LabelTitle {
+                font-size: 60px;
+                color: #93deed;
+            }
+
+            #LabelDesc {
+                font-size: 30px;
+                color: #c2ced1;
+            }
+
+            #LabelLoading {
+                font-size: 30px;
+                color: #e8e8eb;
+            }
+
+            QFrame {
+                background-color: #2F4454;
+                color: rgb(220, 220, 220);
+            }
+
+            QProgressBar {
+                background-color: #DA7B93;
+                color: rgb(200, 200, 200);
+                border-style: none;
+                border-radius: 10px;
+                text-align: center;
+                font-size: 30px;
+            }
+
+            QProgressBar::chunk {
+                border-radius: 10px;
+                background-color: qlineargradient(spread:pad x1:0, x2:1, y1:0.511364, y2:0.523, stop:0 #1C3334, stop:1 #376E6F);
+            }
+        ''')
+
+    splash = SplashScreen()
+    splash.show()
+    #window = MainWindow()
+    try:
+        sys.exit(app.exec_())
+    except SystemExit:
+        print('Closing Window...')
 ########################################################################
 ## END===>
 ########################################################################

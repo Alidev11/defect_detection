@@ -57,7 +57,6 @@ def train(
             if epoch_acc >= target_accuracy and epoch_loss <= 0.0030 :
                 print("Early Stopping")
                 break
-
     return model
 
 def evaluate(model, dataloader, device):
