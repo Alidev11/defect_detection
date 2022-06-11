@@ -17,6 +17,9 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from qt_material import *
+import pandas as pd
+
+
 
 
 
@@ -248,13 +251,15 @@ class MainWindow(QtWidgets.QMainWindow):
 ###Rename
 
     def create_percentage_bar_chart(self):
-
+        # reading the csv file
+        df = pd.read_csv("data_chart.csv")
         set0 = QBarSet("Defected")
         set1 = QBarSet("Good")
-
-        set0.append([1, 2, 3,  4, 5, 6, 1, 2, 3,  4, 5, 6])
-        set1.append([5, 0, 0,  4, 0, 7, 5, 0, 0,  4, 0, 7])
-
+        arr = df.to_numpy()
+        set0.append(list(arr[:, [0]]))
+        print("defected", arr[:, [0]])
+        set1.append(list(arr[:, [1]]))
+        print("good", list(arr[:, [1]]))
         series = QPercentBarSeries()
         series.append(set0)
         series.append(set1)
@@ -278,15 +283,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.chart_view = QChartView(chart)
         self.ui.chart_view.setRenderHint(QPainter.Antialiasing)
         self.ui.chart_view.chart().setTheme(QChart.ChartThemeDark)
-        # QChart.setTheme(theme)
-
-        # print(self.ui.chart_view.chart().theme())
-        # self.ui.chart_view.chart().setBackgroundBrush(QtGui.QColor("gray"))
-
-        # self.setCentralWidget(chart_view)
-
-        # self.lineEdit = QLineEdit(self.percentage_bar_chart_cont)
-        # self.lineEdit.setObjectName(u"lineEdit")
 
         sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
@@ -326,8 +322,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.photo_4.setScaledContents(True)
         if predictionn == "Good":
             self.ui.class_label_4.setStyleSheet("background-color: #5FD068;")
+            return True
         else:
             self.ui.class_label_4.setStyleSheet("background-color: #F00C44;")
+            return False
         self.ui.class_label_4.setText(predictionn)
 
 
@@ -352,11 +350,12 @@ class MainWindow(QtWidgets.QMainWindow):
             heat = True
         if self.ui.options_checkox_2.isChecked():
             bbox = True
-
+        defection = []
         for i in range(4):
             predictionn = predict_localize(
                 model, test_loader, device, self.path_1, bbox, thres=heatmap_thres, n_samples=1, show_heatmap=heat
             )
+            defection.append(predictionn)
             if i == 0:
                 self.ui.photo_1.setPixmap(
                     QtGui.QPixmap("./classified/zoo0.png").scaled(700, 170, QtCore.Qt.KeepAspectRatio))
