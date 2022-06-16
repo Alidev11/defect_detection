@@ -1,14 +1,12 @@
 ########################################################################
 ## IMPORTS
 ########################################################################
-import matplotlib.pyplot as plt
-import sys
 import time
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QProgressBar, QLabel, QFrame, QHBoxLayout, QVBoxLayout
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtWidgets import QPushButton, QProgressBar, QLabel,QVBoxLayout
+from PyQt5.QtCore import QTimer
 import torch
-from utils.dataloader import get_train_test_loaders, get_cv_train_test_loaders
-from utils.helper import train, evaluate, predict_localize
+from utils.dataloader import get_train_test_loaders
+from utils.helper import predict_localize
 from utils.constants import NEG_CLASS
 from PySide2.QtGui import QPainter
 from PyQt5.QtChart import QChart, QChartView, QBarSet, QPercentBarSeries, QBarCategoryAxis
@@ -34,10 +32,10 @@ class SplashScreen(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle('SpLash Screen Example')
-        self.setFixedSize(700, 400)
+        self.setFixedSize(600, 220)
         self.setWindowFlag(QtCore.Qt.FramelessWindowHint)
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
-
+        apply_stylesheet(app, theme='dark_blue.xml')
         self.counter = 0
         self.n = 300 # total instance
 
@@ -54,25 +52,26 @@ class SplashScreen(QWidget):
         self.frame = QtWidgets.QFrame()
         layout.addWidget(self.frame)
 
-        self.labelTitle = QtWidgets.QLabel(self.frame)
-        self.labelTitle.setObjectName('LabelTitle')
 
-        # center labels
-        self.labelTitle.resize(self.width() - 10, 150)
-        self.labelTitle.move(0, 20) # x, y
-        self.labelTitle.setText('Visual Inspection')
-        self.labelTitle.setAlignment(QtCore.Qt.AlignCenter)
+        # self.labelTitle = QtWidgets.QLabel(self.frame)
+        # self.labelTitle.setObjectName('LabelTitle')
+        #
+        # # center labels
+        # self.labelTitle.resize(self.width() - 30, 90)
+        # self.labelTitle.move(0, 15) # x, y
+        # self.labelTitle.setText('')
+        # self.labelTitle.setAlignment(QtCore.Qt.AlignCenter)
 
         self.labelDescription = QLabel(self.frame)
         self.labelDescription.resize(self.width() - 10, 50)
-        self.labelDescription.move(0, self.labelTitle.height())
+        self.labelDescription.move(0, 30)
         self.labelDescription.setObjectName('LabelDesc')
         self.labelDescription.setText('<strong>Working on Task #1</strong>')
         self.labelDescription.setAlignment(QtCore.Qt.AlignCenter)
 
         self.progressBar = QProgressBar(self.frame)
-        self.progressBar.resize(self.width() - 200 - 10, 50)
-        self.progressBar.move(100, self.labelDescription.y() + 80)
+        self.progressBar.resize(self.width() - 200 - 10, 40)
+        self.progressBar.move(100, self.labelDescription.y() + 50)
         self.progressBar.setAlignment(QtCore.Qt.AlignCenter)
         self.progressBar.setFormat('%p%')
         self.progressBar.setTextVisible(True)
@@ -81,7 +80,7 @@ class SplashScreen(QWidget):
 
         self.labelLoading = QLabel(self.frame)
         self.labelLoading.resize(self.width() - 10, 50)
-        self.labelLoading.move(0, self.progressBar.y() + 70)
+        self.labelLoading.move(0, self.progressBar.y() + 40)
         self.labelLoading.setObjectName('LabelLoading')
         self.labelLoading.setAlignment(QtCore.Qt.AlignCenter)
         self.labelLoading.setText('loading...')
@@ -104,19 +103,17 @@ class SplashScreen(QWidget):
 
         self.counter += 1
 
-
-
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self)
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        apply_stylesheet(app, theme='dark_cyan.xml')
+        apply_stylesheet(app, theme='dark_blue.xml')
         #######################################################################
         ## # Remove window tlttle bar
         ########################################################################
         self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
-
+        self.ui.mainBod_frame.setStyleSheet("background-color: {QTMATERIAL_SECONDARYCOLOR}")
         #######################################################################
         ## # Set main background to transparent
         ########################################################################
@@ -196,10 +193,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.openFile_button.clicked.connect(self.open_folder)
         self.ui.classify_button.clicked.connect(lambda: self.classify())
         self.create_percentage_bar_chart()
+        self.dynamic_values()
         print(self.file_path)
         #self.show()
         for x in shadow_elements:
-            #######################################################################
             ## # Shadow effect style
             ########################################################################
             effect = QtWidgets.QGraphicsDropShadowEffect(self)
@@ -208,6 +205,14 @@ class MainWindow(QtWidgets.QMainWindow):
             effect.setYOffset(10)
             effect.setColor(QtGui.QColor(0, 0, 0, 100))
             getattr(self.ui, x).setGraphicsEffect(effect)
+
+
+    def dynamic_values(self):
+        df = pd.read_csv("data_chart.csv")
+        defect = str(df.loc[5, 'defected'])
+        print(defect)
+        self.ui.defected_num_frame.setText(str(df.loc[5, 'defected']))
+        self.ui.good_num_frame.setText(str(df.loc[5, 'good']))
 
     def show_warning_messagebox(self):
         msg = QMessageBox()
@@ -221,6 +226,22 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
     def open_folder(self):
+        self.ui.class_label_1.setStyleSheet("background-color:transparent;")
+        self.ui.class_label_2.setStyleSheet("background-color:transparent;")
+        self.ui.class_label_3.setStyleSheet("background-color:transparent;")
+        self.ui.class_label_4.setStyleSheet("background-color:transparent;")
+        self.ui.class_label_5.setStyleSheet("background-color:transparent;")
+        self.ui.class_label_6.setStyleSheet("background-color:transparent;")
+        self.ui.class_label_7.setStyleSheet("background-color:transparent;")
+
+        self.ui.class_label_1.setText(" ")
+        self.ui.class_label_2.setText(" ")
+        self.ui.class_label_3.setText(" ")
+        self.ui.class_label_4.setText(" ")
+        self.ui.class_label_5.setText(" ")
+        self.ui.class_label_6.setText(" ")
+        self.ui.class_label_7.setText(" ")
+
         foldername = QFileDialog.getExistingDirectory(
             caption="Select a folder",
             directory="data/mvtec_anomaly_detection/datasetSardine/test"
@@ -256,10 +277,10 @@ class MainWindow(QtWidgets.QMainWindow):
         set0 = QBarSet("Defected")
         set1 = QBarSet("Good")
         arr = df.to_numpy()
+
         set0.append(list(arr[:, [0]]))
-        print("defected", arr[:, [0]])
         set1.append(list(arr[:, [1]]))
-        print("good", list(arr[:, [1]]))
+
         series = QPercentBarSeries()
         series.append(set0)
         series.append(set1)
@@ -269,7 +290,6 @@ class MainWindow(QtWidgets.QMainWindow):
         chart.setTitle("Defected vs Good cans in 2022")
         chart.setAnimationOptions(QChart.SeriesAnimations)
 
-
         categories = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "July", "Aug", "Sep", "Oct", "Nov", "Dec"]
         axis = QBarCategoryAxis()
         axis.append(categories)
@@ -277,8 +297,7 @@ class MainWindow(QtWidgets.QMainWindow):
         chart.setAxisX(axis, series)
 
         chart.legend().setVisible(True)
-        #chart.legend().setAlignment(Qt.AlignBottom)
-
+        chart.legend().setAlignment(QtCore.Qt.AlignBottom)
 
         self.ui.chart_view = QChartView(chart)
         self.ui.chart_view.setRenderHint(QPainter.Antialiasing)
@@ -295,7 +314,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def classify_top(self):
         data_folder = "./data/mvtec_anomaly_detection"
-        subset_name = "datasetSardine_top"
+        subset_name = "corner"
         data_folder = os.path.join(data_folder, subset_name)
 
         batch_size = 10
@@ -322,11 +341,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.photo_4.setScaledContents(True)
         if predictionn == "Good":
             self.ui.class_label_4.setStyleSheet("background-color: #5FD068;")
-            return True
+            pred = predictionn
         else:
             self.ui.class_label_4.setStyleSheet("background-color: #F00C44;")
-            return False
+            pred = predictionn
         self.ui.class_label_4.setText(predictionn)
+        return pred
 
 
     def classify_corner(self):
@@ -397,6 +417,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.ui.class_label_7.setStyleSheet("background-color: #F00C44;")
                 self.ui.class_label_7.setText(predictionn)
                 self.path_1 = x
+        return defection
 
 
 ###Classify Front And Back
@@ -421,11 +442,12 @@ class MainWindow(QtWidgets.QMainWindow):
             heat = True
         if self.ui.options_checkox_2.isChecked():
             bbox = True
-
+        defec = []
         for i in range(2):
             predictionn = predict_localize(
                 model, test_loader, device, self.path_2, bbox, thres=heatmap_thres, n_samples=1, show_heatmap=heat
             )
+            defec.append(predictionn)
             if i == 0:
                 self.ui.photo_2.setPixmap(
                     QtGui.QPixmap("./classified/zoo0.png").scaled(700, 170, QtCore.Qt.KeepAspectRatio))
@@ -447,19 +469,32 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.ui.class_label_6.setStyleSheet("background-color: #F00C44;")
                 self.ui.class_label_6.setText(predictionn)
                 self.path_2 = x
-
-
+        return defec
 
 
     def classify(self):
-        if self.file_path == "C:/Users/Mon Ordi/Desktop/Visual-Inspection-main-last/data/mvtec_anomaly_detection/datasetSardine/test/bad" or self.file_path == None:
+        if self.file_path == "C:/Users/Mon Ordi/Desktop/Visual-Inspection-main-last/data/mvtec_anomaly_detection/datasetSardine/test" or self.file_path == None:
             self.show_warning_messagebox()
             self.open_folder()
             return
         else:
-            self.classify_front()
-            self.classify_corner()
-            self.classify_top()
+            list1 = self.classify_front()
+            list2 = self.classify_corner()
+            list3 = self.classify_top()
+            list1.append(list3)
+            list = list1 + list2
+            df = pd.read_csv("data_chart.csv")
+            if "Anomaly" in list:
+                df.loc[5, 'defected'] += 1
+
+                # writing into the file
+                df.to_csv("data_chart.csv", index=False)
+            else:
+                df.loc[5, 'good'] += 1
+
+                # writing into the file
+                df.to_csv("data_chart.csv", index=False)
+
 
     def restore_or_maximize_window(self):
         if self.isMaximized():
@@ -536,41 +571,11 @@ class MainWindow(QtWidgets.QMainWindow):
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
-    app.setStyleSheet('''
-            #LabelTitle {
-                font-size: 60px;
-                color: #93deed;
-            }
-
-            #LabelDesc {
-                font-size: 30px;
-                color: #c2ced1;
-            }
-
-            #LabelLoading {
-                font-size: 30px;
-                color: #e8e8eb;
-            }
-
-            QFrame {
-                background-color: #2F4454;
-                color: rgb(220, 220, 220);
-            }
-
-            QProgressBar {
-                background-color: #DA7B93;
-                color: rgb(200, 200, 200);
-                border-style: none;
-                border-radius: 10px;
-                text-align: center;
-                font-size: 30px;
-            }
-
-            QProgressBar::chunk {
-                border-radius: 10px;
-                background-color: qlineargradient(spread:pad x1:0, x2:1, y1:0.511364, y2:0.523, stop:0 #1C3334, stop:1 #376E6F);
-            }
-        ''')
+    #app.setStyleSheet('''
+            #home_icon_button::hover {
+          #      background-color : lightgreen;
+           # }
+       # ''')
 
     splash = SplashScreen()
     splash.show()
