@@ -15,4 +15,4 @@ VGG16 feature extractor pre-trained on ImageNet, classification head - Average G
 **Inference.**
 During inference model outputs probabilities as well as the heatmap. Heatmap is the linear combination of feature maps from layer conv5-3 weighted by weights of the last dense layer, and upsampled to match image size. From the dense layer, we take only weights that were used to calculate the score for class 'defective'.
 
-![model_inference](classified/zoo.png)
+![model_inference](classified/zoo0.png)
