@@ -3,13 +3,10 @@
 <p id="description">GUI application that detects defects in sardine cans during production. The deep learning model used can detect defects in more than just my dataset.</p>
 <h2>Project Screenshots:</h2>
 <p float="left">
-<img src="Rapport-img/Sign_in.png" width="220"> <img src="Rapport-img/add-warehouse.png" width="220">  <img src="Rapport-img/add-product.png" width="220">  
-<img src="Rapport-img/show-warehouse.png" width="220">  
-<img src="Rapport-img/show-products.png" width="220">  
-<img src="Rapport-img/acceuil.png" width="220">  
-<img src="Rapport-img/show-gallerie.png" width="220">  
-<img src="Rapport-img/image-uploaded.png" width="220">  
-<img src="Rapport-img/free-space-localisation.png" width="220">  
+<img src="paint2.png" width="220">  
+<img src="gui2.png" width="220">  
+<img src="gui3.png" width="220">  
+<img src="stat.png" width="220">    
 </p>
  
 <h2>🧐 Features</h2>
