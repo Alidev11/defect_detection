@@ -3,10 +3,10 @@
 <p id="description">GUI application that detects defects in sardine cans during production. The deep learning model used can detect defects in more than just my dataset.</p>
 <h2>Project Screenshots:</h2>
 <p float="left">
-<img src="paint2.png" width="220">  
-<img src="gui2.png" width="220">  
-<img src="gui3.png" width="220">  
-<img src="stat.png" width="220">    
+<img src="paint2.png" width="800">  
+<img src="gui2.png" width="800">  
+<img src="gui3.png" width=800">  
+<img src="stat.png" width=800">    
 </p>
  
 <h2>🧐 Features</h2>
@@ -42,10 +42,10 @@ VGG16 feature extractor pre-trained on ImageNet, classification head - Average G
 
 
 *Model Training Pipeline:*
-![model_train_pipeline](docs/model_train_pipeline.png)
+<img src="docs/model_train_pipeline.png" width="400">  
 
 **Inference.**
 During inference model outputs probabilities as well as the heatmap. Heatmap is the linear combination of feature maps from layer conv5-3 weighted by weights of the last dense layer, and upsampled to match image size. From the dense layer, we take only weights that were used to calculate the score for class 'defective'.
 
 *Model Inference:*
-![model_inference](classified/zoo0.png)
+<img src="classified/zoo0.png" width="400">  
